@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Consulta de Imóveis - Banco de Dados Local</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+    <style>
+        :root {
+            --primary: #2f80ed;
+            --secondary: #1d2939;
+            --surface: #ffffff;
+            --surface-alt: #f7f9fb;
+            --muted: #64748b;
+            --success: #16a34a;
+            --danger: #ef4444;
+            --radius: 18px;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: linear-gradient(180deg, #e7f2ff 0%, #f5f7fa 100%);
+            color: var(--secondary);
+        }
+
+        .container {
+            max-width: 1240px;
+            margin: 24px auto;
+            background: var(--surface);
+            padding: 28px;
+            border-radius: var(--radius);
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+        }
+
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 1.85rem;
+            line-height: 1.1;
+        }
+
+        .header p {
+            margin: 6px 0 0;
+            color: var(--muted);
+            max-width: 640px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn-update {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 999px;
+            cursor: pointer;
+            border: none;
+            font-size: 0.95rem;
+            transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+        }
+
+        .btn-update:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 30px rgba(37, 99, 235, 0.18);
+        }
+
+        .info-card {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--surface-alt);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 16px;
+            padding: 18px 20px;
+            min-height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .card strong {
+            display: block;
+            font-size: 1.35rem;
+            margin-bottom: 6px;
+        }
+
+        .card span {
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        #statusMsg {
+            margin-bottom: 12px;
+            color: var(--muted);
+            font-size: 0.98rem;
+        }
+
+        .dataTables_wrapper {
+            margin-top: 18px;
+        }
+
+        table.dataTable {
+            border-collapse: separate !important;
+            border-spacing: 0;
+            width: 100% !important;
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        #tabelaDados_wrapper {
+            margin-top: 20px;
+        }
+
+        table.dataTable thead th {
+            background: #eef4ff;
+            color: var(--secondary);
+            font-weight: 600;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        table.dataTable tbody tr:nth-child(even) {
+            background: #fcfdff;
+        }
+
+        table.dataTable tbody tr:hover {
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        .dataTables_wrapper .dataTables_filter input,
+        .dataTables_wrapper .dataTables_length select {
+            border-radius: 999px;
+            border: 1px solid rgba(15, 23, 42, 0.16);
+            padding: 10px 14px;
+            outline: none;
+            color: var(--secondary);
+        }
+
+        .dataTables_wrapper .dataTables_filter input:focus,
+        .dataTables_wrapper .dataTables_length select:focus {
+            border-color: rgba(37, 99, 235, 0.45);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+        }
+
+        #tabelaDados_filter,
+        #tabelaDados_length {
+            margin: 12px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border: 1px solid transparent;
+            border-radius: 999px;
+            padding: 8px 12px;
+            background: #f8fafc;
+            color: var(--secondary) !important;
+            margin: 0 2px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #2563eb !important;
+            color: #fff !important;
+            border-color: transparent;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: #fff;
+            padding: 24px;
+            text-align: center;
+            gap: 14px;
+        }
+
+        .loading-overlay .spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid rgba(255,255,255,0.25);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 900px) {
+            .info-card {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loader" class="loading-overlay">
+    <div style="font-size: 20px; font-weight: bold;">Carregando banco de dados...</div>
+    <p>Isso pode levar alguns segundos devido ao volume de dados.</p>
+</div>
+
+<div class="container">
+    <div class="header">
+        <h2>Consulta de cadastros</h2>
+        <label class="btn-update">
+            Atualizar Planilha
+            <input type="file" id="uploadFile" accept=".csv, .xlsx" style="display: none;">
+        </label>
+    </div>
+
+    <div id="statusMsg" style="margin-bottom: 15px; color: #666;">Verificando dados salvos...</div>
+
+    <div class="info-card">
+        <div class="card">
+            <strong id="totalRegistros">0</strong>
+            <span>Total de registros carregados</span>
+        </div>
+        <div class="card">
+            <strong id="sourceLabel">Fonte</strong>
+            <span>Origem dos dados</span>
+        </div>
+        <div class="card">
+            <strong>Busca Rápida</strong>
+            <span>Use o campo de pesquisa para localizar imóveis por nome, CPF/CNPJ ou endereço.</span>
+        </div>
+    </div>
+
+    <table id="tabelaDados" class="display responsive nowrap" style="width:100%">
+        <thead>
+            <tr>
+                <th>Cadastro</th>
+                <th>Nome</th>
+                <th>CPF / CNPJ</th>
+                <th>Endereço</th>
+                <th>ID</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+<script>
+    // 1. Configura o Banco de Dados Local (Dexie)
+    const db = new Dexie("MeuBancoImobiliario");
+    db.version(1).stores({
+        registros: "++id, cadastro, nome, cnpjCpf, endereco, idCadastro"
+    });
+
+    const statusMsg = document.getElementById('statusMsg');
+    const loader = document.getElementById('loader');
+    const totalCards = document.getElementById('totalRegistros');
+    const sourceCard = document.getElementById('sourceLabel');
+
+    $.fn.dataTable.ext.errMode = 'console';
+
+    const columnAliases = {
+        cadastro: ['cadastro', 'número cadastro', 'numero cadastro', 'nº cadastro', 'cad', 'registro', 'codigo', 'id cadastro'],
+        nome: ['nome', 'cliente', 'proprietário', 'proprietario', 'locatário', 'locador', 'razão social', 'razao social', 'razao_social', 'razao', 'fantasia'],
+        cnpjCpf: ['cpf / cnpj', 'cpf', 'cnpj', 'cpfcnpj', 'cnpjcpf', 'documento', 'doc', 'cpf/cnpj', 'cpf ou cnpj'],
+        endereco: ['endereço', 'endereco', 'logradouro', 'rua', 'endereco completo', 'localização', 'localizacao', 'logradouro completo'],
+        idCadastro: ['id', 'id cadastro', 'identificador', 'identificador cadastro', 'codigo interno', 'numero', 'número']
+    };
+
+    function normalizeKey(key) {
+        return key
+            .toString()
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ' ')
+            .replace(/ +/g, ' ');
+    }
+
+    function findAlias(normalizedKeys, aliases) {
+        return aliases.find(alias => normalizedKeys.includes(alias));
+    }
+
+    function normalizeSheetRow(rawRow) {
+        const normalized = {};
+        const normalizedKeyMap = {};
+        Object.keys(rawRow).forEach((originalKey) => {
+            const key = normalizeKey(originalKey);
+            normalized[key] = rawRow[originalKey];
+            normalizedKeyMap[key] = originalKey;
+        });
+
+        const mapped = {};
+        Object.entries(columnAliases).forEach(([field, aliases]) => {
+            const alias = findAlias(Object.keys(normalized), aliases);
+            mapped[field] = alias ? normalized[alias] : '';
+        });
+        return mapped;
+    }
+
+    function atualizarResumo(count, fonte) {
+        totalCards.innerText = count;
+        sourceCard.innerText = fonte;
+    }
+
+    async function loadStoredData() {
+        const count = await db.registros.count();
+        if (count > 0) {
+            statusMsg.innerText = `Carregando ${count} registros salvos...`;
+            const storedData = await db.registros.toArray();
+            const todosDados = storedData.map(normalizeSheetRow);
+            atualizarResumo(todosDados.length, 'Dados do navegador');
+            renderizarTabela(todosDados);
+            statusMsg.innerText = 'Banco de dados pronto! Último carregamento disponível.';
+        } else {
+            statusMsg.innerText = "Nenhum dado encontrado. Clique em 'Atualizar Planilha' para começar.";
+            atualizarResumo(0, 'Nenhum registro');
+        }
+    }
+
+    window.onload = loadStoredData;
+
+    document.getElementById('uploadFile').addEventListener('change', async function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        loader.style.display = 'flex';
+        const reader = new FileReader();
+
+        reader.onload = async function (event) {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+                const parsedData = jsonData.map(normalizeSheetRow).filter(row => Object.values(row).some(val => val !== ''));
+
+                if (parsedData.length === 0) {
+                    statusMsg.innerText = 'Arquivo carregado, mas não foi possível mapear as colunas esperadas. Verifique o arquivo e tente novamente.';
+                    return;
+                }
+
+                await db.registros.clear();
+                await db.registros.bulkAdd(parsedData);
+                atualizarResumo(parsedData.length, file.name);
+                statusMsg.innerText = `${parsedData.length} registros carregados com sucesso.`;
+                renderizarTabela(parsedData);
+            } catch (erro) {
+                console.error(erro);
+                statusMsg.innerText = 'Erro ao processar o arquivo. Confira o formato e tente novamente.';
+            } finally {
+                loader.style.display = 'none';
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    function renderizarTabela(dados) {
+        if ($.fn.DataTable.isDataTable('#tabelaDados')) {
+            $('#tabelaDados').DataTable().clear().rows.add(dados).draw();
+            return;
+        }
+
+        $('#tabelaDados').DataTable({
+            data: dados,
+            responsive: true,
+            columns: [
+                { data: 'cadastro' },
+                { data: 'nome' },
+                { data: 'cnpjCpf' },
+                { data: 'endereco' },
+                { data: 'idCadastro' }
+            ],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json',
+                search: 'Buscar:',
+                searchPlaceholder: 'Buscar...',
+                lengthMenu: 'Mostrar _MENU_ registros',
+                info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
+                infoEmpty: 'Mostrando 0 a 0 de 0 registros',
+                infoFiltered: '(filtrado de _MAX_ registros no total)',
+                zeroRecords: 'Nenhum registro encontrado',
+                paginate: {
+                    previous: 'Anterior',
+                    next: 'Próximo',
+                    first: 'Primeiro',
+                    last: 'Último'
+                }
+            },
+            pageLength: 20,
+            deferRender: true,
+            autoWidth: false,
+            dom: '<"top"f>rt<"bottom"lip><"clear">',
+            order: [[0, 'asc']],
+            errorMode: 'console'
+        });
+    }
+</script>
+
+</body>
+</html>
